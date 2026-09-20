@@ -1,5 +1,5 @@
 -- ============================================================
--- LZY HUB - FULL GUI, SINGLE-KEY & HWID LOCK SYSTEM (FIXED)
+-- LZY HUB - FULL GUI, SINGLE-KEY & HWID LOCK SYSTEM (UPDATED)
 -- ============================================================
 
 local CoreGui = game:GetService("CoreGui")
@@ -9,8 +9,8 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- CONFIGURATION (GITHUB & WEBHOOK)
-local GITHUB_KEY_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/keys.txt"
-local TARGET_RAW_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/main.lua"
+local GITHUB_KEY_URL = "https://raw.githubusercontent.com/satriapratama-spec/ArzxLZYnp/refs/heads/main/keys.txt"
+local TARGET_RAW_URL = "https://raw.githubusercontent.com/satriapratama-spec/ArzxLZYnp/refs/heads/main/raw.lua"
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1551041219721830441/f3RF5Jt9H-y5ZD63CbTN3tT9JDPEfZrP2s9yO9xE0t0vs4JWaw8oszg8ONE343-HzukF"
 
 -- FUNCTION: Get Player HWID securely
