@@ -840,10 +840,10 @@ function r.bypassMoveTo(dq, dr, ds)
 end
 
 -- ============================================================
--- HOLD 3s: ĐỨNG CHẶT (Anchored). Hết 3s -> nhả anchor dứt khoát
+-- HOLD INSTANT / KILAT (Anchored super singkat 0.1s langsung lepas)
 -- ============================================================
 function r.holdAtPosition(dq, dr)
-    dq = tonumber(dq) or bp
+    dq = 0.1 -- Dipaksa jadi instan (0.1 detik)
     local ds = r.getRoot(); if not ds then return false end
     local dt = ds.CFrame
 
@@ -862,6 +862,7 @@ function r.holdAtPosition(dq, dr)
         c.Heartbeat:Wait()
     end
 
+    -- Langsung lepas anchor secara instan
     ds = r.getRoot()
     if ds then
         pcall(function() ds.Anchored = false end)
@@ -875,7 +876,7 @@ function r.returnToBaseBypass(dq)
     local dr = r.getBasePosition()
     if not dr then return false end
     if dq and not dq() then return false end
-    return r.bypassMoveTo(Vector3.new(dr.X, dr.Y + 3, dr.Z), dq, r.bypassSpeed())
+    return r.bypassMoveTo(Vector3.new(dr.X, dr.Y + 0.1, dr.Z), dq, r.bypassSpeed())
 end
 
 function r.returnToBase(dq) 
@@ -890,54 +891,6 @@ function r.ensureAtPlot(dq)
     return r.bypassMoveTo(dr, dq, r.bypassSpeed())
 end
 
-
--- ============================================================
--- HOLD 3s: ĐỨNG CHẶT (Anchored). Hết 3s -> nhả anchor dứt khoát
--- ============================================================
-function r.holdAtPosition(dq, dr)
-    dq = tonumber(dq) or bp
-    local ds = r.getRoot(); if not ds then return false end
-    local dt = ds.CFrame
-
-    pcall(function() ds.Anchored = true end)
-
-    local du = os.clock() + dq
-    while s and os.clock() < du do
-        if dr and not dr() then break end
-        ds = r.getRoot()
-        if ds then
-            ds.AssemblyLinearVelocity  = Vector3.zero
-            ds.AssemblyAngularVelocity = Vector3.zero
-            pcall(function() ds.CFrame = dt end)
-            pcall(function() ds.Anchored = true end)
-        end
-        c.Heartbeat:Wait()
-    end
-
-    -- Hết 3s -> NHẢ ANCHOR NGAY (không đứng chặt nữa)
-    ds = r.getRoot()
-    if ds then
-        pcall(function() ds.Anchored = false end)
-        ds.AssemblyLinearVelocity  = Vector3.zero
-        ds.AssemblyAngularVelocity = Vector3.zero
-    end
-    return true
-end
-
-function r.returnToBaseBypass(dq)
-    local dr = r.getBasePosition()
-    if not dr then return false end
-    if dq and not dq() then return false end
-    return r.bypassMoveTo(Vector3.new(dr.X, dr.Y + 3, dr.Z), dq, r.bypassSpeed())
-end
-function r.returnToBase(dq) return r.returnToBaseBypass(dq) end
-function r.ensureAtPlot(dq)
-    if dq and not dq() then return false end
-    if r.isNearPlot() then return true end
-    local dr = r.getPetAreaStandPosition()
-    if not dr then return false end
-    return r.bypassMoveTo(dr, dq, r.bypassSpeed())
-end
 
 -- ============================================================
 -- EGG / STEAL
