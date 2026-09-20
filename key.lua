@@ -1,15 +1,16 @@
 -- ============================================================
--- LZY HUB - FULL GUI, SINGLE-KEY & HWID LOCK SYSTEM (RAW TARGET)
+-- LZY HUB - FULL GUI, SINGLE-KEY & HWID LOCK SYSTEM (FIXED)
 -- ============================================================
 
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- CONFIGURATION (GITHUB & WEBHOOK)
-local GITHUB_KEY_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/keys.txt" -- Raw URL of your valid keys list[span_0](start_span)[span_0](end_span)
-local TARGET_RAW_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/main.lua" -- Raw URL of your main script (.lua file)
+local GITHUB_KEY_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/keys.txt"
+local TARGET_RAW_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/main.lua"
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1551041219721830441/f3RF5Jt9H-y5ZD63CbTN3tT9JDPEfZrP2s9yO9xE0t0vs4JWaw8oszg8ONE343-HzukF"
 
 -- FUNCTION: Get Player HWID securely
@@ -57,7 +58,7 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = getRootGui()
 
--- 2. CREATE MAIN FRAME WINDOW
+-- 2. CREATE MAIN FRAME WINDOW (KEY SYSTEM)
 local KeyFrame = Instance.new("Frame", ScreenGui)
 KeyFrame.Name = "KeyWindow"
 KeyFrame.Size = UDim2.fromOffset(400, 240)
@@ -144,7 +145,7 @@ end)
 -- Verify Button Action
 VerifyBtn.MouseButton1Click:Connect(function()
     StatusLabel.TextColor3 = Theme.textDim
-    StatusLabel.Text = "Checking key status...[span_1](start_span)"[span_1](end_span)
+    StatusLabel.Text = "Checking key status..."
     
     local inputKey = string.gsub(KeyBox.Text, "%s+", "")
     if inputKey == "" then
@@ -153,7 +154,7 @@ VerifyBtn.MouseButton1Click:Connect(function()
         return
     end
 
-    -- Fetch valid keys from GitHub repository[span_2](start_span)[span_2](end_span)
+    -- Fetch valid keys from GitHub repository
     local success, result = pcall(function()
         return game:HttpGet(GITHUB_KEY_URL)
     end)
@@ -202,7 +203,7 @@ VerifyBtn.MouseButton1Click:Connect(function()
         end)
         
         if not loadSuccess then
-            warn("Failed to execute raw script: " .. tostring(loadErr)) -- Diubah dari & jadi ..
+            warn("Failed to execute raw script: " .. tostring(loadErr))
         end
     else
         StatusLabel.TextColor3 = Theme.error
