@@ -8,7 +8,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 -- CONFIGURATION (GITHUB & WEBHOOK)
-local GITHUB_KEY_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/keys.txt" -- Raw URL of your valid keys list[span_0](start_span)[span_0](end_span)
+local GITHUB_KEY_URL = "https://raw.githubusercontent.com/satriapratama-spec/ArzxLZYnp/refs/heads/main/keys.txt" -- Raw URL of your valid keys list[span_0](start_span)[span_0](end_span)
 local TARGET_RAW_URL = "https://raw.githubusercontent.com/satriapratama-spec/ArzxLZYnp/refs/heads/main/raw.lua" -- Raw URL of your main script (.lua file)
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1551041219721830441/f3RF5Jt9H-y5ZD63CbTN3tT9JDPEfZrP2s9yO9xE0t0vs4JWaw8oszg8ONE343-HzukF"
 
