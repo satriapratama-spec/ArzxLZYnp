@@ -8,8 +8,8 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 -- CONFIGURATION (GITHUB & WEBHOOK)
-local GITHUB_KEY_URL = "https://raw.githubusercontent.com/satriapratama-spec/ArzxLZYnp/refs/heads/main/keys.txt" -- Raw URL of your valid keys list[span_0](start_span)[span_0](end_span)
-local TARGET_RAW_URL = "https://raw.githubusercontent.com/satriapratama-spec/ArzxLZYnp/refs/heads/main/raw.lua" -- Raw URL of your main script (.lua file)
+local GITHUB_KEY_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/keys.txt" -- Raw URL of your valid keys list[span_0](start_span)[span_0](end_span)
+local TARGET_RAW_URL = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/main.lua" -- Raw URL of your main script (.lua file)
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1551041219721830441/f3RF5Jt9H-y5ZD63CbTN3tT9JDPEfZrP2s9yO9xE0t0vs4JWaw8oszg8ONE343-HzukF"
 
 -- FUNCTION: Get Player HWID securely
@@ -202,7 +202,7 @@ VerifyBtn.MouseButton1Click:Connect(function()
         end)
         
         if not loadSuccess then
-            warn("Failed to execute raw script: " & tostring(loadErr))
+            warn("Failed to execute raw script: " .. tostring(loadErr)) -- Diubah dari & jadi ..
         end
     else
         StatusLabel.TextColor3 = Theme.error

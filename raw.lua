@@ -2185,7 +2185,7 @@ ed.PaddingLeft = UDim.new(0, 8)
 ed.PaddingRight = UDim.new(0, 8)
 ed.Parent = ea
 
-local ee, ef = 640, 440
+local ee, ef = 480, 300
 local eg = Instance.new("Frame")
 eg.Name = "Panel"
 eg.Size = UDim2.fromOffset(ee, ef)
@@ -2293,7 +2293,7 @@ ev.MouseEnter:Connect(function() l:Create(ev, TweenInfo.new(0.15), { BackgroundC
 ev.MouseLeave:Connect(function() l:Create(ev, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(50, 20, 20), BackgroundTransparency = 0.2 }):Play() end)
 ev.MouseButton1Click:Connect(function() eg.Visible = false end)
 
-local ew = 150
+local ew = 120
 local ex = Instance.new("Frame")
 ex.Position = UDim2.fromOffset(0, 52)
 ex.Size = UDim2.new(0, ew, 1, -52)
