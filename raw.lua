@@ -413,6 +413,7 @@ end
 -- ============================================================
 -- GAME HELPERS
 -- ============================================================
+-- Fungsi untuk mematikan tabrakan seluruh bagian tubuh agar tidak mental
 function r.getHumanoid()
     local dq = m.Character
     return dq and dq:FindFirstChildOfClass("Humanoid") or nil
@@ -589,16 +590,37 @@ function r.groundedY(dq, dr, ds)
     return dt + 3
 end
 
+function r.disableCollisions()
+    local char = m.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
+
+-- Fungsi untuk mengunci state humanoid agar tidak jatuh/ragdoll saat menabrak sesuatu
+function r.lockHumanoidState(humanoid)
+    if not humanoid then return end
+    pcall(function()
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+    end)
+end
+
 -- ============================================================
--- STEAL / BYPASS SPEED
+-- STEAL / BYPASS SPEED (Optimized for maximum speed & smoothness)
 -- ============================================================
 function r.stealSpeed()
     local dq = tonumber(r.optionValue("StealMoveSpeed", bj)) or bj
-    return math.clamp(dq, 16, bi)
+    return math.clamp(dq, 16, math.max(bi, 1500)) -- Dinaikkan maksimal target speed-nya
 end
+
 function r.bypassSpeed()
     local dq = tonumber(r.optionValue("BypassReturnSpeed", bk)) or bk
-    return bm(dq)
+    return math.max(bm(dq), 1500) -- Ditingkatkan agar bypass ikut ngebut maksimal
 end
 
 function r.swapStealHumanoid()
@@ -638,7 +660,7 @@ function r.prepareStealHumanoid()
         du = dr
     end
 
-    task.wait(0.1)
+    task.wait(0.05)
 
     du = dq:FindFirstChildOfClass("Humanoid") or du
     if du then
@@ -686,7 +708,6 @@ function r.humanoidStealMoveTo(dq, dr)
     local dx = r.buildStealPath(du.Position, dw)
     if #dx == 0 then dx = { dw } end
 
-    local dy = 0
     for _, dz in ipairs(dx) do
         if not s or (dr and not dr()) then return false end
         du = r.getRoot(); if not du then return false end
@@ -714,12 +735,8 @@ function r.humanoidStealMoveTo(dq, dr)
                 ek = CFrame.new(ei)
             end
             dm(du, ek)
-
-            dy = dy + 1
-            if dy % 4 == 0 then
-                du.AssemblyLinearVelocity = Vector3.zero
-                du.AssemblyAngularVelocity = Vector3.zero
-            end
+            -- Baris reset velocity (AssemblyLinearVelocity = Vector3.zero) 
+            -- sengaja dihapus agar momentum kecepatan tidak terpotong-potong.
         end
     end
 
@@ -733,6 +750,7 @@ function r.stealMoveTo(dq, dr, ds)
     local du = r.groundedY(dq, dr, dt.Position.Y)
     return r.humanoidStealMoveTo(Vector3.new(dq, du, dr), ds)
 end
+
 function r.stealAlong(dq, dr)
     for _, ds in ipairs(dq) do
         if dr and not dr() then return false end
@@ -740,6 +758,7 @@ function r.stealAlong(dq, dr)
     end
     return true
 end
+
 function r.getBasePosition()
     if ak.GetRespawnPointCFrame then
         local dq = ak.GetRespawnPointCFrame()
@@ -752,6 +771,7 @@ function r.getBasePosition()
     if dq.PetArea then return dq.PetArea.Position end
     return nil
 end
+
 function r.getPetAreaStandPosition()
     if ak.GetPlotData then
         local dq = ak.GetPlotData()
@@ -759,6 +779,7 @@ function r.getPetAreaStandPosition()
     end
     return r.getBasePosition()
 end
+
 function r.isNearPlot()
     local dq = r.getRoot(); if not dq then return false end
     if ak.IsWorldPositionWithinLocalPlotBounds and ak.IsWorldPositionWithinLocalPlotBounds(dq.Position) then return true end
@@ -785,17 +806,18 @@ function r.bypassMoveTo(dq, dr, ds)
         return true
     end
 
+    -- Menggunakan math.huge dan P tinggi agar BodyVelocity ditarik maksimal tanpa perlawanan fisik
     local dx = Instance.new("BodyVelocity")
     dx.Name = "LzyBypassMove"
-    dx.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-    dx.P = 1250
+    dx.MaxForce = Vector3.new(math.huge, math.huge, math.huge) 
+    dx.P = 25000                              
     dx.Velocity = Vector3.zero
     dx.Parent = dt
 
     local dy = Instance.new("BodyGyro")
     dy.Name = "LzyBypassGyro"
-    dy.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
-    dy.P = 3000
+    dy.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    dy.P = 50000
     dy.D = 50
     dy.CFrame = dt.CFrame
     dy.Parent = dt
@@ -830,6 +852,46 @@ function r.bypassMoveTo(dq, dr, ds)
     return dz
 end
 
+function r.enableNoClip()
+    local character = m.Character
+    if not character then return end
+    
+    -- Loop ke semua part di karakter dan matikan CanCollide-nya
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
+
+-- Hubungkan ke Heartbeat agar status No-Clip terus aktif setiap frame selama pergerakan ekstrem
+local runServiceConnection = nil
+function r.startNoClipLoop()
+    if runServiceConnection then return end
+    runServiceConnection = c.Heartbeat:Connect(function()
+        r.enableNoClip()
+    end)
+end
+
+function r.stopNoClipLoop()
+    if runServiceConnection then
+        runServiceConnection:Disconnect()
+        runServiceConnection = nil
+    end
+    
+    -- Kembalikan tabrakan normal saat selesai (opsional)
+    local character = m.Character
+    if character then
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+
+
 -- ============================================================
 -- HOLD 3s: ĐỨNG CHẶT (Anchored). Hết 3s -> nhả anchor dứt khoát
 -- ============================================================
@@ -853,7 +915,7 @@ function r.holdAtPosition(dq, dr)
         c.Heartbeat:Wait()
     end
 
-    -- Hết 3s -> NHẢ ANCHOR NGAY (không đứng chặt nữa)
+    -- Hết 3s -> NHẢ ANCHOR NGAY (tidak mengunci lagi)
     ds = r.getRoot()
     if ds then
         pcall(function() ds.Anchored = false end)
@@ -867,9 +929,11 @@ function r.returnToBaseBypass(dq)
     local dr = r.getBasePosition()
     if not dr then return false end
     if dq and not dq() then return false end
-    return r.bypassMoveTo(Vector3.new(dr.X, dr.Y + 3, dr.Z), dq, r.bypassSpeed())
+    return r.bypassMoveTo(Vector3.new(dr.X, dr.Y + 0.1, dr.Z), dq, r.bypassSpeed())
 end
+
 function r.returnToBase(dq) return r.returnToBaseBypass(dq) end
+
 function r.ensureAtPlot(dq)
     if dq and not dq() then return false end
     if r.isNearPlot() then return true end
@@ -879,101 +943,146 @@ function r.ensureAtPlot(dq)
 end
 
 -- ============================================================
--- EGG / STEAL
+-- OPTIMIZED EGG & STEAL FUNCTIONS
 -- ============================================================
+
 function r.getAreaEggs()
     if not aj.GetAreaEggSnapshot then return {} end
-    local dq = aj.GetAreaEggSnapshot()
-    if typeof(dq) ~= "table" or typeof(dq.Records) ~= "table" then
+    local snapshot = aj.GetAreaEggSnapshot()
+    
+    if typeof(snapshot) ~= "table" or typeof(snapshot.Records) ~= "table" then
         if aj.RequestAreaEggSnapshot then pcall(aj.RequestAreaEggSnapshot) end
-        dq = aj.GetAreaEggSnapshot()
+        snapshot = aj.GetAreaEggSnapshot()
     end
-    if typeof(dq) ~= "table" or typeof(dq.Records) ~= "table" then return {} end
-    local dr = {}
-    for _, ds in pairs(dq.Records) do
-        if typeof(ds) == "table" and typeof(ds.Uid) == "string" then table.insert(dr, ds) end
-    end
-    return dr
-end
-function r.findAreaEggRecord(dq)
-    for _, dr in ipairs(r.getAreaEggs()) do if dr.Uid == dq then return dr end end
-    return nil
-end
-function r.getSlotEggPosition(dq)
-    local dr = dq:FindFirstChild("Hitbox")
-        or dq:FindFirstChild("CustomBoundingBox")
-        or dq:FindFirstChildOfClass("BasePart")
-    if dr then return dr.Position end
-    return dq:GetPivot().Position
-end
-function r.isBigEgg(dq)
-    if not r.isOn("StealBigEggs") then return false end
-    local dr = tonumber(dq.AssetScale)
-    if not dr then return false end
-    return dr >= (tonumber(r.optionValue("StealBigEggScale", 1.5)) or 1.5)
-end
-function r.eggScore(dq) return au[r.resolveRarity(dq.AssetCategory) or "Common"] or 0 end
-function r.isStealCandidate(dq, dr)
-    if typeof(dq) ~= "table" or typeof(dq.Uid) ~= "string" then return false end
-    if dq.State ~= "Slot" and dq.State ~= "Dropped" then return false end
-    if dr then return true end
-    if r.isBigEgg(dq) and r.selectionAllows("StealZones", dq.AreaId) then return true end
-    if not r.isOn("AutoStealSelected") then return false end
-    return r.matchesEggFilters(dq, "StealZones", "StealRarities", "StealMutations")
-end
-function r.pickStealTarget()
-    local dq = dg and dg:GetChildren() or {}
-    if #dq == 0 then return nil end
-    local dr = {}
-    for _, ds in ipairs(r.getAreaEggs()) do
-        if typeof(ds.Uid) == "string" then dr[ds.Uid] = ds end
-    end
-    local ds = r.isOn("AutoStealAll") and not r.isOn("AutoStealSelected")
-    local dt = r.getRoot()
-    local du = r.optionValue("StealPriority", "Rarest")
-    local dv, dw = nil, -math.huge
-    for _, dx in ipairs(dq) do
-        local dy = dr[dx.Name]
-        local dz = dy and r.isStealCandidate(dy, ds) or (dy == nil and ds)
-        if dz then
-            local ea = r.getSlotEggPosition(dx)
-            local eb = dt and ea and (dt.Position - ea).Magnitude or math.huge
-            local ec
-            if du == "Nearest" then ec = -eb
-            elseif du == "Furthest" then ec = eb
-            elseif du == "Biggest Size" then ec = tonumber(dy and dy.AssetScale) or 0
-            else ec = (dy and r.eggScore(dy) or 0) * 100000 - math.min(eb, 99999) end
-            if ec > dw then dv = dx; dw = ec end
+    
+    if typeof(snapshot) ~= "table" or typeof(snapshot.Records) ~= "table" then return {} end
+    
+    local records = {}
+    for _, record in pairs(snapshot.Records) do
+        if typeof(record) == "table" and typeof(record.Uid) == "string" then 
+            table.insert(records, record) 
         end
     end
-    return dv
+    return records
 end
-function r.stealingEnabled() return r.isOn("AutoStealSelected") or r.isOn("AutoStealAll") or r.isOn("StealBigEggs") end
+
+function r.findAreaEggRecord(uid)
+    for _, record in ipairs(r.getAreaEggs()) do 
+        if record.Uid == uid then return record end 
+    end
+    return nil
+end
+
+function r.getSlotEggPosition(slot)
+    local part = slot:FindFirstChild("Hitbox")
+        or slot:FindFirstChild("CustomBoundingBox")
+        or slot:FindFirstChildOfClass("BasePart")
+    if part then return part.Position end
+    return slot:GetPivot().Position
+end
+
+function r.isBigEgg(record)
+    if not r.isOn("StealBigEggs") then return false end
+    local scale = tonumber(record.AssetScale)
+    if not scale then return false end
+    return scale >= (tonumber(r.optionValue("StealBigEggScale", 1.5)) or 1.5)
+end
+
+function r.eggScore(record) 
+    return au[r.resolveRarity(record.AssetCategory) or "Common"] or 0 
+end
+
+function r.isStealCandidate(record, ignoreFilters)
+    if typeof(record) ~= "table" or typeof(record.Uid) ~= "string" then return false end
+    if record.State ~= "Slot" and record.State ~= "Dropped" then return false end
+    if ignoreFilters then return true end
+    if r.isBigEgg(record) and r.selectionAllows("StealZones", record.AreaId) then return true end
+    if not r.isOn("AutoStealSelected") then return false end
+    return r.matchesEggFilters(record, "StealZones", "StealRarities", "StealMutations")
+end
+
+function r.pickStealTarget()
+    local children = dg and dg:GetChildren() or {}
+    if #children == 0 then return nil end
+    
+    local eggMap = {}
+    for _, egg in ipairs(r.getAreaEggs()) do
+        if typeof(egg.Uid) == "string" then eggMap[egg.Uid] = egg end
+    end
+    
+    local autoAllOnly = r.isOn("AutoStealAll") and not r.isOn("AutoStealSelected")
+    local rootPart = r.getRoot()
+    local priority = r.optionValue("StealPriority", "Rarest")
+    
+    local bestTarget, maxScore = nil, -math.huge
+    
+    for _, slot in ipairs(children) do
+        local record = eggMap[slot.Name]
+        local isValid = record and r.isStealCandidate(record, autoAllOnly) or (record == nil and autoAllOnly)
+        
+        if isValid then
+            local pos = r.getSlotEggPosition(slot)
+            local distance = rootPart and pos and (rootPart.Position - pos).Magnitude or math.huge
+            local currentScore
+            
+            if priority == "Nearest" then 
+                currentScore = -distance
+            elseif priority == "Furthest" then 
+                currentScore = distance
+            elseif priority == "Biggest Size" then 
+                currentScore = tonumber(record and record.AssetScale) or 0
+            else 
+                currentScore = (record and r.eggScore(record) or 0) * 100000 - math.min(distance, 99999) 
+            end
+            
+            if currentScore > maxScore then 
+                bestTarget = slot
+                maxScore = currentScore 
+            end
+        end
+    end
+    return bestTarget
+end
+
+function r.stealingEnabled() 
+    return r.isOn("AutoStealSelected") or r.isOn("AutoStealAll") or r.isOn("StealBigEggs") 
+end
+
 function r.eggInventoryCount()
-    local dq = r.getSave()
-    local dr = dq and dq.EggInventory
-    if typeof(dr) ~= "table" then return 0 end
-    return r.countTable(dr)
+    local saveData = r.getSave()
+    local inventory = saveData and saveData.EggInventory
+    if typeof(inventory) ~= "table" then return 0 end
+    return r.countTable(inventory)
 end
+
 function r.eggInventoryFull()
-    local dq = w and tonumber(w.MAX_INVENTORY) or math.huge
-    return r.eggInventoryCount() >= dq
+    local maxInv = w and tonumber(w.MAX_INVENTORY) or math.huge
+    return r.eggInventoryCount() >= maxInv
 end
-function r.canAutoSteal() return r.stealingEnabled() and not bu and not r.eggInventoryFull() end
-function r.tryCarryEgg(dq)
-    if not dq or not aj.RequestCarryAreaEgg then return false end
-    local dr = dq.Name
-    local ds = nil
-    if al.IsFirstAreaUid and al.IsFirstAreaUid(dr) then
-        for _, dt in ipairs(r.getAreaEggs()) do
-            if dt.Uid == dr and al.BuildSlotKey then
-                ds = al.BuildSlotKey(dt.AreaId, dt.NestId)
+
+function r.canAutoSteal() 
+    return r.stealingEnabled() and not bu and not r.eggInventoryFull() 
+end
+
+function r.tryCarryEgg(slot)
+    if not slot or not aj.RequestCarryAreaEgg then return false end
+    local slotName = slot.Name
+    local slotKey = nil
+    
+    if al.IsFirstAreaUid and al.IsFirstAreaUid(slotName) then
+        for _, record in ipairs(r.getAreaEggs()) do
+            if record.Uid == slotName and al.BuildSlotKey then
+                slotKey = al.BuildSlotKey(record.AreaId, record.NestId)
                 break
             end
         end
     end
-    local dt, du = pcall(function() return aj.RequestCarryAreaEgg(dr, ds) end)
-    if dt and du == true then return true end
+    
+    local success, result = pcall(function() 
+        return aj.RequestCarryAreaEgg(slotName, slotKey) 
+    end)
+    
+    if success and result == true then return true end
     return bu
 end
 
@@ -1008,7 +1117,7 @@ function r.stealEgg(dq)
     if not r.stealingEnabled() then return false end
 
     -- 2) Nhặt lần 1
-    r.waitFor(bq.GrabDelay, 0.04, function()
+    r.waitFor(bq.GrabDelay, 0.02, function() -- Dipercepat interval tunggu grab-nya
         ds = r.getRoot()
         if ds then
             local dt = r.groundedY(dr.X, dr.Z, dr.Y)
@@ -1019,7 +1128,7 @@ function r.stealEgg(dq)
         return bu == true
     end)
 
-    local dt = os.clock() + 2.5
+    local dt = os.clock() + 2.0
     while s and r.stealingEnabled() and not bu and os.clock() < dt do
         ds = r.getRoot()
         if ds then
@@ -1028,7 +1137,7 @@ function r.stealEgg(dq)
         end
         r.tryCarryEgg(dq)
         if bu then break end
-        task.wait(0.05)
+        task.wait(0.02)
     end
 
     if not bu then return false end
@@ -1045,23 +1154,23 @@ function r.stealEgg(dq)
     end
     r.holdAtPosition(bp, r.stealingEnabled)
 
-    -- 4) Hết 3s -> không còn đứng chặt (Anchored đã nhả trong holdAtPosition)
+    -- 4) Hết 3s -> tidak mengunci lagi (Anchored sudah dilepas di holdAtPosition)
     if not s or not r.stealingEnabled() then return false end
 
     -- Nhặt lần 2
-    if not bu then r.tryCarryEgg(dq); task.wait(0.1) end
-    local du = os.clock() + 1.5
+    if not bu then r.tryCarryEgg(dq); task.wait(0.05) end
+    local du = os.clock() + 1.0
     while s and r.stealingEnabled() and not bu and os.clock() < du do
-        r.tryCarryEgg(dq); task.wait(0.05)
+        r.tryCarryEgg(dq); task.wait(0.02)
     end
 
     -- 5) Về base bằng bypass
     r.returnToBaseBypass(r.stealingEnabled)
 
     -- 6) Confirm vòng hoàn tất
-    local dv = os.clock() + 3
+    local dv = os.clock() + 2.0
     while s and r.stealingEnabled() and bu and os.clock() < dv do
-        task.wait(0.1)
+        task.wait(0.05)
     end
     return true
 end
@@ -1072,18 +1181,20 @@ function r.runAutoSteal()
     if not dq then return false end
     return r.stealEgg(dq)
 end
+
 function r.runAutoDropEgg()
     if not bu then return false end
     if aj.RequestDropHeldAreaEgg then return pcall(function() aj.RequestDropHeldAreaEgg("PlayerRequest") end) end
     return false
 end
+
 function r.runAutoReturn()
     if not bu then return false end
     local dq = function() return r.isOn("AutoReturn") and bu end
     if not r.returnToBaseBypass(dq) then return false end
     local dr = r.getRoot()
     if dr and ak.IsWorldPositionWithinLocalPlotBounds and ak.IsWorldPositionWithinLocalPlotBounds(dr.Position) then
-        r.waitFor(4, 0.15, function() return (not bu) or (not r.isOn("AutoReturn")) end)
+        r.waitFor(3, 0.1, function() return (not bu) or (not r.isOn("AutoReturn")) end)
     end
     return true
 end
