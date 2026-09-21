@@ -615,12 +615,12 @@ end
 -- ============================================================
 function r.stealSpeed()
     local dq = tonumber(r.optionValue("StealMoveSpeed", bj)) or bj
-    return math.clamp(dq, 16, math.max(bi, 1500)) -- Dinaikkan maksimal target speed-nya
+    return math.clamp(dq, 16, math.max(bi, 1100)) -- Dinaikkan maksimal target speed-nya
 end
 
 function r.bypassSpeed()
     local dq = tonumber(r.optionValue("BypassReturnSpeed", bk)) or bk
-    return math.max(bm(dq), 1500) -- Ditingkatkan agar bypass ikut ngebut maksimal
+    return math.max(bm(dq), 1100) -- Ditingkatkan agar bypass ikut ngebut maksimal
 end
 
 function r.swapStealHumanoid()
