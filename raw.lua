@@ -592,15 +592,10 @@ end
 -- ============================================================
 -- STEAL / BYPASS SPEED
 -- ============================================================
--- ============================================================
--- FIXED, CLEAN & STABLE ROBLOX MOVEMENT & STEALING MODULE
--- ============================================================
-
 function r.stealSpeed()
     local dq = tonumber(r.optionValue("StealMoveSpeed", bj)) or bj
     return math.clamp(dq, 16, bi)
 end
-
 function r.bypassSpeed()
     local dq = tonumber(r.optionValue("BypassReturnSpeed", bk)) or bk
     return bm(dq)
@@ -738,7 +733,6 @@ function r.stealMoveTo(dq, dr, ds)
     local du = r.groundedY(dq, dr, dt.Position.Y)
     return r.humanoidStealMoveTo(Vector3.new(dq, du, dr), ds)
 end
-
 function r.stealAlong(dq, dr)
     for _, ds in ipairs(dq) do
         if dr and not dr() then return false end
@@ -746,7 +740,6 @@ function r.stealAlong(dq, dr)
     end
     return true
 end
-
 function r.getBasePosition()
     if ak.GetRespawnPointCFrame then
         local dq = ak.GetRespawnPointCFrame()
@@ -759,7 +752,6 @@ function r.getBasePosition()
     if dq.PetArea then return dq.PetArea.Position end
     return nil
 end
-
 function r.getPetAreaStandPosition()
     if ak.GetPlotData then
         local dq = ak.GetPlotData()
@@ -767,7 +759,6 @@ function r.getPetAreaStandPosition()
     end
     return r.getBasePosition()
 end
-
 function r.isNearPlot()
     local dq = r.getRoot(); if not dq then return false end
     if ak.IsWorldPositionWithinLocalPlotBounds and ak.IsWorldPositionWithinLocalPlotBounds(dq.Position) then return true end
@@ -840,10 +831,10 @@ function r.bypassMoveTo(dq, dr, ds)
 end
 
 -- ============================================================
--- HOLD INSTANT / KILAT (Anchored super singkat 0.1s langsung lepas)
+-- HOLD 3s: ĐỨNG CHẶT (Anchored). Hết 3s -> nhả anchor dứt khoát
 -- ============================================================
 function r.holdAtPosition(dq, dr)
-    dq = 0.1 -- Dipaksa jadi instan (0.1 detik)
+    dq = tonumber(dq) or bp
     local ds = r.getRoot(); if not ds then return false end
     local dt = ds.CFrame
 
@@ -862,7 +853,7 @@ function r.holdAtPosition(dq, dr)
         c.Heartbeat:Wait()
     end
 
-    -- Langsung lepas anchor secara instan
+    -- Hết 3s -> NHẢ ANCHOR NGAY (không đứng chặt nữa)
     ds = r.getRoot()
     if ds then
         pcall(function() ds.Anchored = false end)
@@ -876,13 +867,9 @@ function r.returnToBaseBypass(dq)
     local dr = r.getBasePosition()
     if not dr then return false end
     if dq and not dq() then return false end
-    return r.bypassMoveTo(Vector3.new(dr.X, dr.Y + 0.1, dr.Z), dq, r.bypassSpeed())
+    return r.bypassMoveTo(Vector3.new(dr.X, dr.Y + 3, dr.Z), dq, r.bypassSpeed())
 end
-
-function r.returnToBase(dq) 
-    return r.returnToBaseBypass(dq) 
-end
-
+function r.returnToBase(dq) return r.returnToBaseBypass(dq) end
 function r.ensureAtPlot(dq)
     if dq and not dq() then return false end
     if r.isNearPlot() then return true end
@@ -890,7 +877,6 @@ function r.ensureAtPlot(dq)
     if not dr then return false end
     return r.bypassMoveTo(dr, dq, r.bypassSpeed())
 end
-
 
 -- ============================================================
 -- EGG / STEAL
